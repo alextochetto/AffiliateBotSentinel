@@ -22,7 +22,10 @@ public class TrackBotService : ITrackBotService
             PartitionKey = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd"),
             RowKey = Guid.NewGuid().ToString(),
             Ip = query.Ip ?? string.Empty,
-            UserAgent = query.UserAgent ?? string.Empty
+            UserAgent = query.UserAgent ?? string.Empty,
+            IsBot = query.IsBot,
+            Path = query.Path ?? string.Empty,
+            Timestamp = query.Timestamp
         };
 
         try

@@ -11,4 +11,6 @@ public class BotTrackEntity : ITableEntity
     public ETag ETag { get; set; }
     public string Ip { get; set; } = string.Empty;
     public string UserAgent { get; set; } = string.Empty;
+    public bool IsBot { get; set; }
+    public string Path { get; set; } = string.Empty;
 }
