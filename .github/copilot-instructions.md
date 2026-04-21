@@ -29,7 +29,18 @@ src/
   wordpress/             # WordPress integration (planned)
 ```
 
-The single current endpoint is `POST /api/trackbot`, which accepts bot tracking data (IP + User-Agent), validates the caller via a custom API key header, and writes the event to Azure Table Storage.
+The single current endpoint is `POST /api/TrackBot/Track`, which accepts bot tracking data, validates the caller via a custom API key header, and writes the event to Azure Table Storage.
+
+**Request body (`TrackBotPostDtq`):**
+| Field | Type | Description |
+|---|---|---|
+| `Ip` | `string` | Client IP address |
+| `UserAgent` | `string` | HTTP User-Agent string |
+| `IsBot` | `bool` | Whether the caller was identified as a bot |
+| `Path` | `string` | Requested URL path |
+| `Timestamp` | `DateTime` | Event timestamp provided by the caller |
+
+**Stored entity (`BotTrackEntity`)** maps all of the above, plus `PartitionKey` (UTC date `yyyy-MM-dd`) and `RowKey` (new `Guid`).
 
 ## Configuration
 
@@ -44,6 +55,116 @@ The single current endpoint is `POST /api/trackbot`, which accepts bot tracking 
 ```
 
 The `BotTracks` table is created automatically on startup via `CreateIfNotExistsAsync`.
+
+## Deploying to Azure App Service (Free Tier)
+
+The workflow `.github/workflows/deploy.yml` builds and deploys the API to Azure App Service on every push to `main`. It can also be triggered manually from GitHub Actions.
+
+### One-time Azure setup
+
+**1. Create an Azure App Service**
+1. Go to [portal.azure.com](https://portal.azure.com) → **Create a resource → Web App**
+2. Choose these settings:
+   - **Publish:** Code
+   - **Runtime stack:** .NET 10 (LTS)
+   - **Operating System:** Linux
+   - **Pricing plan:** Free F1
+
+**2. Set the connection string**
+
+In the App Service → **Settings → Environment variables → App settings**, add:
+
+| Name | Value |
+|---|---|
+| `AzureTableStorage__ConnectionString` | your Azure Storage connection string |
+
+> Azure App Service maps `__` (double underscore) to `:` in .NET configuration, so `AzureTableStorage__ConnectionString` is read as `AzureTableStorage:ConnectionString`.
+
+**3. Get the publish profile**
+1. In the App Service → **Overview**, click **Download publish profile**
+2. Open the downloaded file and copy its entire contents
+
+**4. Add GitHub Secrets**
+
+In your GitHub repository → **Settings → Secrets and variables → Actions**, add:
+
+| Secret name | Value |
+|---|---|
+| `AZURE_WEBAPP_NAME` | your App Service name (e.g. `affiliatebotsentinel`) |
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | the full contents of the publish profile file |
+
+**5. Push to `main`**
+
+The workflow triggers automatically. Monitor progress in the **Actions** tab on GitHub.
+
+### Free tier limitations (F1)
+
+- **No "Always On"** — the app sleeps after ~20 min of inactivity; first request after sleep will be slow
+- **60 CPU minutes/day** — sufficient for a low-traffic bot tracker
+- **No custom domain SSL** — the app runs on `https://<app-name>.azurewebsites.net`
+
+---
+
+## WordPress Plugin Installation
+
+Plugin location in this repo: `src/wordpress/plugins/csharp-bot-track-plugin/bot-track-plugin.php`
+
+### Prerequisites
+- WordPress site with admin access
+- `AffiliateBotSentinel` API deployed and publicly accessible
+- `AzureTableStorage:ConnectionString` configured on the API host
+
+### Steps
+
+**1. Fix the API key header name before uploading**
+
+The plugin currently sends `x-api-key` but the API validates `trackbot-api-key`. Open `bot-track-plugin.php` and change:
+```php
+// Before
+'x-api-key' => 'vT9fK2xQ8LmR4Zp7Yw3NcD1Hs6JbA0Ue'
+
+// After
+'trackbot-api-key' => 'vT9fK2xQ8LmR4Zp7Yw3NcD1Hs6JbA0Ue'
+```
+
+**2. Set the correct API URL**
+
+In the same file, replace the placeholder URL:
+```php
+// Before
+wp_remote_post('https://your-api.com/api/TrackBot/Track', [
+
+// After
+wp_remote_post('https://<your-actual-domain>/api/TrackBot/Track', [
+```
+
+**3. Upload the plugin to WordPress**
+
+Copy the entire folder `csharp-bot-track-plugin/` (containing `bot-track-plugin.php`) into your WordPress installation:
+```
+wp-content/plugins/csharp-bot-track-plugin/
+```
+You can do this via FTP, SFTP, or your hosting file manager.
+
+**4. Activate the plugin**
+
+1. Log in to **WordPress Admin**
+2. Go to **Plugins → Installed Plugins**
+3. Find **C# Tracker** and click **Activate**
+
+**5. Verify it is working**
+
+1. Visit any page on your WordPress site while logged out
+2. Open [Azure Storage Explorer](https://azure.microsoft.com/en-us/products/storage/storage-explorer/) (or the Azure Portal → Storage Account → Tables)
+3. Open the `BotTracks` table — a new row should appear with your IP, User-Agent, path, and `IsBot` flag
+
+### How the plugin works
+
+- Fires on every WordPress page load via the `init` action (non-blocking, 0.3 s timeout — no impact on page speed)
+- Detects bot hints from the User-Agent string (`bot`, `crawl`, `spider`, `slurp`)
+- Reads the real client IP from `HTTP_CF_CONNECTING_IP` first (Cloudflare), falling back to `REMOTE_ADDR`
+
+---
 
 ## Key Conventions
 

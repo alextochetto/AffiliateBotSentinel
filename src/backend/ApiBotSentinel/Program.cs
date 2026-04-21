@@ -1,5 +1,6 @@
 using ApiBotSentinel.Services;
 using Azure.Data.Tables;
+using Microsoft.AspNetCore.HttpOverrides;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -22,5 +23,10 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 await tableClient.CreateIfNotExistsAsync();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.Run();

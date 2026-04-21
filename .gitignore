@@ -52,4 +52,14 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Build Results of an ATL Project
+[Dd]ebugPS/
 src/backend/ApiBotSentinel/appsettings.Development.json
+
+# Publish profiles
+src/backend/ApiBotSentinel/Properties/PublishProfiles/
+src/backend/ApiBotSentinel/Properties/serviceDependencies.deploy.json.user
+
+# Visual Studio cache files
+src/Solutions/.vs/

@@ -1,11 +1,11 @@
 using ApiBotSentinel.Dts;
 using ApiBotSentinel.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiBotSentinel.Controllers;
 
-[Route("api/[controller]")]
-[ApiController]
+[Route("api/[controller]/[action]")]
 public class TrackBotController : ControllerBase
 {
     private readonly ITrackBotService _trackBotService;
@@ -15,7 +15,7 @@ public class TrackBotController : ControllerBase
         _trackBotService = trackBotService;
     }
 
-    [HttpPost("Track")]
+    [HttpPost]
     public async Task<IActionResult> Track([FromBody] TrackBotPostDtq trackBotPostQuery)
     {
         if (!CheckHeaderApiKey())

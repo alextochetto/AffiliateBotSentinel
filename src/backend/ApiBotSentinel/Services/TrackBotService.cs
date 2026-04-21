@@ -25,7 +25,7 @@ public class TrackBotService : ITrackBotService
             UserAgent = query.UserAgent ?? string.Empty,
             IsBot = query.IsBot,
             Path = query.Path ?? string.Empty,
-            Timestamp = query.Timestamp
+            Timestamp = DateTimeOffset.UtcNow
         };
 
         try
