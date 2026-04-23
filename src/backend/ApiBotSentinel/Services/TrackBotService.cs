@@ -25,6 +25,7 @@ public class TrackBotService : ITrackBotService
             UserAgent = query.UserAgent ?? string.Empty,
             IsBot = query.IsBot,
             Path = query.Path ?? string.Empty,
+            Gclid = query.Gclid ?? string.Empty,
             Timestamp = DateTimeOffset.UtcNow
         };
 

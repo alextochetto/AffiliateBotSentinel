@@ -8,6 +8,11 @@ if (!defined('ABSPATH')) exit;
 
 function csharp_tracker_send() {
 
+    if (!isset($_GET['gclid']) || $_GET['gclid'] === '')
+        return;
+
+    $gclid = sanitize_text_field($_GET['gclid']);
+
     // Get IP (Cloudflare safe)
     $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
@@ -22,7 +27,8 @@ function csharp_tracker_send() {
         'userAgent' => $userAgent,
         'isBot' => $isBotHint ? true : false,
         'path' => $_SERVER['REQUEST_URI'] ?? '',
-        'timestamp' => gmdate('Y-m-d\TH:i:s\Z')
+        'timestamp' => gmdate('Y-m-d\TH:i:s\Z'),
+        'gclid' => $gclid
     ];
 
     wp_remote_post('https://botsentinel.azurewebsites.net/api/TrackBot/Track', [

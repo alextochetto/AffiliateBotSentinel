@@ -7,4 +7,5 @@ public class TrackBotPostDtq
     public bool IsBot { get; set; }
     public string Path { get; set; }
     public DateTime Timestamp { get; set; }
+    public string? Gclid { get; set; }
 }

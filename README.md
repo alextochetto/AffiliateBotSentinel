@@ -43,6 +43,7 @@ The single current endpoint is `POST /api/TrackBot/Track`, which accepts bot tra
 | `IsBot` | `bool` | Whether the caller was identified as a bot |
 | `Path` | `string` | Requested URL path |
 | `Timestamp` | `DateTime` | Event timestamp in ISO 8601 format (e.g. `2026-04-21T18:27:17Z`) |
+| `Gclid` | `string?` | Google Click ID from the `gclid` query string parameter (omitted when absent) |
 
 **Stored entity (`BotTrackEntity`)** maps all of the above, plus `PartitionKey` (UTC date `yyyy-MM-dd`) and `RowKey` (new `Guid`).
 
@@ -150,9 +151,9 @@ You can do this via FTP, SFTP, or your hosting file manager.
 
 **4. Verify it is working**
 
-1. Visit any page on your WordPress site while logged out
+1. Visit any page on your WordPress site while logged out, **appending `?gclid=test123` to the URL** (e.g. `https://yoursite.com/?gclid=test123`)
 2. Open [Azure Storage Explorer](https://azure.microsoft.com/en-us/products/storage/storage-explorer/) (or the Azure Portal → Storage Account → Tables)
-3. Open the `BotTracks` table — a new row should appear with your IP, User-Agent, path, and `IsBot` flag
+3. Open the `BotTracks` table — a new row should appear with your IP, User-Agent, path, `IsBot` flag, and the `Gclid` value
 
 ### Updating the plugin
 
@@ -165,7 +166,8 @@ No need to deactivate/reactivate — the change takes effect on the next page lo
 
 ### How the plugin works
 
-- Fires on every WordPress page load via the `init` action
+- **Only fires when a `gclid` query string parameter is present** — requests without it are silently ignored
+- Captures the `gclid` value (Google Click ID) and sends it in the request body
 - **Non-blocking** (10s timeout) — no impact on page speed for visitors; WordPress fires the request and immediately continues
 - Sends `timestamp` as ISO 8601 UTC (e.g. `2026-04-21T18:27:17Z`) to match the .NET `DateTime` type
 - Detects bot hints from the User-Agent string (`bot`, `crawl`, `spider`, `slurp`)

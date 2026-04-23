@@ -13,4 +13,5 @@ public class BotTrackEntity : ITableEntity
     public string UserAgent { get; set; } = string.Empty;
     public bool IsBot { get; set; }
     public string Path { get; set; } = string.Empty;
+    public string Gclid { get; set; } = string.Empty;
 }
